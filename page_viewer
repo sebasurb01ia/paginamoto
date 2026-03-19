@@ -1,0 +1,848 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ARCADE HTML VIEWER</title>
+<link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Share+Tech+Mono&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg-deep: #000814;
+    --bg-dark: #000d2e;
+    --bg-panel: #020c22;
+    --bg-panel2: #010a1c;
+    --neon-cyan: #00f5ff;
+    --neon-yellow: #ffe600;
+    --neon-pink: #ff00aa;
+    --neon-green: #39ff14;
+    --neon-orange: #ff6600;
+    --border-cyan: #00a8b5;
+    --text-main: #c8e8ff;
+    --text-dim: #4a7a99;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: var(--bg-deep);
+    font-family: 'Share Tech Mono', monospace;
+    color: var(--text-main);
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+
+  /* SCANLINES OVERLAY */
+  body::after {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background: repeating-linear-gradient(
+      0deg,
+      transparent,
+      transparent 2px,
+      rgba(0,0,0,0.18) 2px,
+      rgba(0,0,0,0.18) 4px
+    );
+    pointer-events: none;
+    z-index: 9999;
+  }
+
+  /* ── HEADER ── */
+  header {
+    background: var(--bg-panel);
+    border-bottom: 2px solid var(--neon-cyan);
+    padding: 0 16px;
+    height: 56px;
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    flex-shrink: 0;
+    position: relative;
+    box-shadow: 0 0 24px rgba(0,245,255,0.25), 0 0 60px rgba(0,245,255,0.08);
+  }
+
+  .logo-block {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .logo-icon {
+    width: 34px;
+    height: 34px;
+    position: relative;
+  }
+
+  .logo-icon svg { width: 100%; height: 100%; }
+
+  .logo-text {
+    font-family: 'Press Start 2P', monospace;
+    font-size: 11px;
+    color: var(--neon-cyan);
+    text-shadow: 0 0 8px var(--neon-cyan), 0 0 20px rgba(0,245,255,0.4);
+    letter-spacing: 2px;
+    line-height: 1.5;
+  }
+
+  .logo-sub {
+    font-family: 'Press Start 2P', monospace;
+    font-size: 6px;
+    color: var(--neon-yellow);
+    text-shadow: 0 0 6px var(--neon-yellow);
+    letter-spacing: 3px;
+  }
+
+  .header-spacer { flex: 1; }
+
+  .score-block {
+    font-family: 'Press Start 2P', monospace;
+    font-size: 7px;
+    color: var(--neon-yellow);
+    text-align: right;
+    line-height: 2;
+    text-shadow: 0 0 6px var(--neon-yellow);
+  }
+
+  .score-val {
+    font-size: 9px;
+    color: #fff;
+    text-shadow: 0 0 8px #fff;
+  }
+
+  .blink { animation: blink 1.1s step-start infinite; }
+  @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0} }
+
+  .insert-coin {
+    font-family: 'Press Start 2P', monospace;
+    font-size: 6px;
+    color: var(--neon-pink);
+    text-shadow: 0 0 8px var(--neon-pink);
+    letter-spacing: 1px;
+  }
+
+  /* ── TOOLBAR ── */
+  .toolbar {
+    background: var(--bg-panel2);
+    border-bottom: 1px solid #0a2a44;
+    padding: 7px 16px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-shrink: 0;
+  }
+
+  .btn {
+    font-family: 'Press Start 2P', monospace;
+    font-size: 7px;
+    padding: 7px 14px;
+    border: 2px solid;
+    cursor: pointer;
+    letter-spacing: 1px;
+    transition: all 0.1s;
+    text-transform: uppercase;
+    background: transparent;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .btn::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    opacity: 0;
+    transition: opacity 0.15s;
+  }
+
+  .btn:active { transform: scale(0.95); }
+
+  .btn-run {
+    border-color: var(--neon-green);
+    color: var(--neon-green);
+    text-shadow: 0 0 6px var(--neon-green);
+    box-shadow: 0 0 10px rgba(57,255,20,0.3), inset 0 0 8px rgba(57,255,20,0.05);
+  }
+  .btn-run:hover {
+    background: rgba(57,255,20,0.12);
+    box-shadow: 0 0 20px rgba(57,255,20,0.5), inset 0 0 12px rgba(57,255,20,0.1);
+  }
+
+  .btn-fullview {
+    border-color: var(--neon-cyan);
+    color: var(--neon-cyan);
+    text-shadow: 0 0 6px var(--neon-cyan);
+    box-shadow: 0 0 10px rgba(0,245,255,0.3), inset 0 0 8px rgba(0,245,255,0.05);
+  }
+  .btn-fullview:hover {
+    background: rgba(0,245,255,0.1);
+    box-shadow: 0 0 20px rgba(0,245,255,0.5), inset 0 0 12px rgba(0,245,255,0.1);
+  }
+
+  .btn-clear {
+    border-color: var(--neon-pink);
+    color: var(--neon-pink);
+    text-shadow: 0 0 6px var(--neon-pink);
+    box-shadow: 0 0 10px rgba(255,0,170,0.25);
+  }
+  .btn-clear:hover {
+    background: rgba(255,0,170,0.1);
+    box-shadow: 0 0 20px rgba(255,0,170,0.45);
+  }
+
+  .btn-copy {
+    border-color: var(--neon-yellow);
+    color: var(--neon-yellow);
+    text-shadow: 0 0 6px var(--neon-yellow);
+    box-shadow: 0 0 10px rgba(255,230,0,0.25);
+  }
+  .btn-copy:hover {
+    background: rgba(255,230,0,0.1);
+    box-shadow: 0 0 20px rgba(255,230,0,0.4);
+  }
+
+  .separator {
+    width: 1px;
+    height: 28px;
+    background: #0d2840;
+    margin: 0 4px;
+  }
+
+  .status-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: var(--neon-green);
+    box-shadow: 0 0 8px var(--neon-green);
+    flex-shrink: 0;
+  }
+
+  .status-txt {
+    font-family: 'Press Start 2P', monospace;
+    font-size: 6px;
+    color: var(--neon-green);
+    text-shadow: 0 0 5px var(--neon-green);
+  }
+
+  .toolbar-right {
+    margin-left: auto;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .char-count {
+    font-size: 11px;
+    color: var(--text-dim);
+  }
+
+  /* ── MAIN SPLIT ── */
+  .main {
+    flex: 1;
+    display: flex;
+    overflow: hidden;
+  }
+
+  /* ── EDITOR PANEL ── */
+  .editor-panel {
+    width: 50%;
+    display: flex;
+    flex-direction: column;
+    border-right: 2px solid #0a2a44;
+    position: relative;
+  }
+
+  .panel-header {
+    background: var(--bg-panel);
+    border-bottom: 1px solid #0a2a44;
+    padding: 6px 14px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-shrink: 0;
+  }
+
+  .panel-title {
+    font-family: 'Press Start 2P', monospace;
+    font-size: 7px;
+    letter-spacing: 1px;
+  }
+
+  .panel-title.cyan { color: var(--neon-cyan); text-shadow: 0 0 6px var(--neon-cyan); }
+  .panel-title.yellow { color: var(--neon-yellow); text-shadow: 0 0 6px var(--neon-yellow); }
+
+  .panel-dots {
+    display: flex;
+    gap: 5px;
+    margin-left: auto;
+  }
+
+  .dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+  }
+
+  .dot-r { background: #ff5f57; }
+  .dot-y { background: #ffbd2e; }
+  .dot-g { background: #28c940; }
+
+  .editor-wrapper {
+    flex: 1;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .line-numbers {
+    position: absolute;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    width: 42px;
+    background: #010818;
+    border-right: 1px solid #0a2030;
+    padding: 14px 0;
+    overflow: hidden;
+    font-size: 11px;
+    line-height: 20px;
+    color: #1a4060;
+    text-align: right;
+    padding-right: 8px;
+    user-select: none;
+    font-family: 'Share Tech Mono', monospace;
+  }
+
+  .code-editor {
+    position: absolute;
+    left: 42px;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    background: var(--bg-panel2);
+    border: none;
+    outline: none;
+    resize: none;
+    color: #a8d8ff;
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 13px;
+    line-height: 20px;
+    padding: 14px 14px;
+    caret-color: var(--neon-cyan);
+    tab-size: 2;
+  }
+
+  .code-editor::selection {
+    background: rgba(0,245,255,0.2);
+  }
+
+  .code-editor::-webkit-scrollbar { width: 6px; height: 6px; }
+  .code-editor::-webkit-scrollbar-track { background: #010818; }
+  .code-editor::-webkit-scrollbar-thumb { background: #0a3050; border-radius: 3px; }
+  .code-editor::-webkit-scrollbar-thumb:hover { background: #0d4a7a; }
+
+  /* ── PREVIEW PANEL ── */
+  .preview-panel {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .preview-frame-wrap {
+    flex: 1;
+    position: relative;
+    background: #fff;
+    overflow: hidden;
+  }
+
+  .preview-iframe {
+    width: 100%;
+    height: 100%;
+    border: none;
+    display: block;
+    background: #fff;
+  }
+
+  .preview-placeholder {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 20px;
+    background: var(--bg-panel2);
+  }
+
+  .pixel-art {
+    image-rendering: pixelated;
+  }
+
+  .placeholder-icon {
+    width: 64px;
+    height: 64px;
+    opacity: 0.3;
+  }
+
+  .placeholder-txt {
+    font-family: 'Press Start 2P', monospace;
+    font-size: 8px;
+    color: var(--text-dim);
+    text-align: center;
+    line-height: 2;
+  }
+
+  .placeholder-hint {
+    font-family: 'Press Start 2P', monospace;
+    font-size: 6px;
+    color: #1a4060;
+    animation: blink 1.5s step-start infinite;
+  }
+
+  /* ── RESIZER ── */
+  .resizer {
+    width: 5px;
+    background: #0a2a44;
+    cursor: col-resize;
+    flex-shrink: 0;
+    transition: background 0.2s;
+  }
+  .resizer:hover, .resizer.dragging { background: var(--neon-cyan); box-shadow: 0 0 10px rgba(0,245,255,0.5); }
+
+  /* ── STATUSBAR ── */
+  .statusbar {
+    background: #000d24;
+    border-top: 1px solid #0a2030;
+    padding: 4px 16px;
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    flex-shrink: 0;
+    height: 26px;
+  }
+
+  .sb-item {
+    font-size: 10px;
+    color: var(--text-dim);
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .sb-item span { color: var(--text-main); }
+
+  .sb-right { margin-left: auto; display: flex; gap: 20px; }
+
+  /* ── CORNER DECORATIONS ── */
+  .corner {
+    position: absolute;
+    width: 10px;
+    height: 10px;
+    border-color: var(--neon-cyan);
+    border-style: solid;
+    opacity: 0.6;
+  }
+  .corner-tl { top: 0; left: 0; border-width: 2px 0 0 2px; }
+  .corner-tr { top: 0; right: 0; border-width: 2px 2px 0 0; }
+  .corner-bl { bottom: 0; left: 0; border-width: 0 0 2px 2px; }
+  .corner-br { bottom: 0; right: 0; border-width: 0 2px 2px 0; }
+
+  /* ── TOAST ── */
+  .toast {
+    position: fixed;
+    bottom: 40px;
+    left: 50%;
+    transform: translateX(-50%) translateY(20px);
+    background: var(--bg-panel);
+    border: 2px solid var(--neon-green);
+    color: var(--neon-green);
+    font-family: 'Press Start 2P', monospace;
+    font-size: 7px;
+    padding: 10px 20px;
+    box-shadow: 0 0 20px rgba(57,255,20,0.4);
+    opacity: 0;
+    transition: all 0.3s;
+    z-index: 10000;
+    text-shadow: 0 0 6px var(--neon-green);
+    pointer-events: none;
+  }
+  .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+  /* ── SCROLLBAR PREVIEW ── */
+  .preview-frame-wrap::-webkit-scrollbar { width: 4px; }
+  .preview-frame-wrap::-webkit-scrollbar-track { background: #010818; }
+  .preview-frame-wrap::-webkit-scrollbar-thumb { background: #0a3050; }
+
+  /* ── PIXEL DIVIDERS ── */
+  .pixel-div {
+    height: 2px;
+    background: repeating-linear-gradient(90deg, var(--neon-cyan) 0 4px, transparent 4px 8px);
+    opacity: 0.15;
+    flex-shrink: 0;
+  }
+
+  /* Hover glow on panels */
+  .editor-panel:hover .panel-header .panel-title.cyan {
+    text-shadow: 0 0 12px var(--neon-cyan), 0 0 24px rgba(0,245,255,0.3);
+  }
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<header>
+  <div class="logo-block">
+    <div class="logo-icon">
+      <svg viewBox="0 0 34 34" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <rect x="2" y="6" width="30" height="22" rx="3" fill="#000d2e" stroke="#00f5ff" stroke-width="1.5"/>
+        <rect x="6" y="10" width="14" height="10" rx="1" fill="#001a3a" stroke="#00a8b5" stroke-width="1"/>
+        <circle cx="25" cy="14" r="3" fill="none" stroke="#39ff14" stroke-width="1.5"/>
+        <circle cx="25" cy="22" r="2" fill="#ff00aa"/>
+        <rect x="7" y="11" width="12" height="8" fill="#00f5ff" opacity="0.07"/>
+        <path d="M6 24 H28" stroke="#0a2a44" stroke-width="1"/>
+        <rect x="13" y="27" width="8" height="3" rx="1" fill="#00a8b5" opacity="0.5"/>
+      </svg>
+    </div>
+    <div>
+      <div class="logo-text">HTML VIEWER</div>
+      <div class="logo-sub">ARCADE EDITION</div>
+    </div>
+  </div>
+
+  <div class="header-spacer"></div>
+
+  <div class="insert-coin blink">▶ INSERT COIN ◀</div>
+
+  <div class="score-block">
+    <div>SCORE &nbsp;<span class="score-val" id="score-display">000000</span></div>
+    <div>LINES &nbsp;<span class="score-val" id="lines-display">0000</span></div>
+  </div>
+</header>
+
+<!-- TOOLBAR -->
+<div class="toolbar">
+  <button class="btn btn-run" onclick="runCode()">▶ RUN</button>
+  <button class="btn btn-fullview" onclick="openFullView()">⬛ FULL VIEW</button>
+  <div class="separator"></div>
+  <button class="btn btn-copy" onclick="copyCode()">◈ COPY</button>
+  <button class="btn btn-clear" onclick="clearCode()">✕ CLEAR</button>
+  <div class="separator"></div>
+  <div class="status-dot" id="statusDot"></div>
+  <span class="status-txt" id="statusTxt">LISTO</span>
+  <div class="toolbar-right">
+    <span class="char-count" id="charCount">0 CHARS</span>
+  </div>
+</div>
+
+<div class="pixel-div"></div>
+
+<!-- MAIN -->
+<div class="main" id="mainArea">
+
+  <!-- EDITOR -->
+  <div class="editor-panel" id="editorPanel">
+    <div class="panel-header">
+      <div class="panel-title cyan">◈ HTML CODE</div>
+      <div class="panel-dots">
+        <div class="dot dot-r"></div>
+        <div class="dot dot-y"></div>
+        <div class="dot dot-g"></div>
+      </div>
+    </div>
+    <div class="editor-wrapper">
+      <div class="line-numbers" id="lineNumbers">1</div>
+      <textarea
+        class="code-editor"
+        id="codeEditor"
+        spellcheck="false"
+        autocomplete="off"
+        autocorrect="off"
+        autocapitalize="off"
+        placeholder="<!-- Escribe tu HTML aquí... -->"
+      ></textarea>
+    </div>
+  </div>
+
+  <!-- RESIZER -->
+  <div class="resizer" id="resizer"></div>
+
+  <!-- PREVIEW -->
+  <div class="preview-panel" id="previewPanel">
+    <div class="panel-header">
+      <div class="panel-title yellow">⬛ MINI PREVIEW</div>
+      <div style="margin-left:auto; font-size:10px; color:var(--text-dim);" id="previewStatus">— sin contenido —</div>
+    </div>
+    <div class="preview-frame-wrap" style="position:relative;">
+      <div class="corner corner-tl"></div>
+      <div class="corner corner-tr"></div>
+      <div class="corner corner-bl"></div>
+      <div class="corner corner-br"></div>
+      <div class="preview-placeholder" id="placeholder">
+        <svg class="placeholder-icon" viewBox="0 0 64 64" fill="none">
+          <rect x="4" y="12" width="56" height="40" rx="4" stroke="#00a8b5" stroke-width="2" stroke-dasharray="4 3"/>
+          <path d="M20 32 L28 24 L36 32 L44 24" stroke="#1a4060" stroke-width="2" stroke-linecap="square"/>
+          <rect x="14" y="36" width="12" height="8" rx="1" fill="#0a2a44"/>
+          <rect x="30" y="34" width="20" height="4" rx="1" fill="#0a2a44"/>
+          <rect x="30" y="40" width="14" height="4" rx="1" fill="#0a2a44"/>
+        </svg>
+        <div class="placeholder-txt">ESCRIBE HTML<br>Y PRESIONA RUN</div>
+        <div class="placeholder-hint">▶ PRESS START ◀</div>
+      </div>
+      <iframe class="preview-iframe" id="previewFrame" style="display:none;"></iframe>
+    </div>
+  </div>
+
+</div>
+
+<!-- STATUSBAR -->
+<div class="statusbar">
+  <div class="sb-item">HTML &nbsp;<span id="sb-valid">—</span></div>
+  <div class="sb-item">LÍNEA &nbsp;<span id="sb-line">1</span></div>
+  <div class="sb-item">COL &nbsp;<span id="sb-col">1</span></div>
+  <div class="sb-right">
+    <div class="sb-item"><span>ARCADE HTML VIEWER</span></div>
+    <div class="sb-item">v<span>1.0</span></div>
+  </div>
+</div>
+
+<!-- TOAST -->
+<div class="toast" id="toast"></div>
+
+<script>
+const editor = document.getElementById('codeEditor');
+const lineNumbers = document.getElementById('lineNumbers');
+const previewFrame = document.getElementById('previewFrame');
+const placeholder = document.getElementById('placeholder');
+const statusDot = document.getElementById('statusDot');
+const statusTxt = document.getElementById('statusTxt');
+const charCount = document.getElementById('charCount');
+const scoreDisplay = document.getElementById('score-display');
+const linesDisplay = document.getElementById('lines-display');
+
+let score = 0;
+let runCount = 0;
+
+// Default HTML
+const defaultHTML = `<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>Mi Página</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin: 0;
+    }
+    .card {
+      background: white;
+      border-radius: 16px;
+      padding: 40px;
+      text-align: center;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+    }
+    h1 { color: #764ba2; margin: 0 0 10px; }
+    p  { color: #666; margin: 0; }
+    .badge {
+      display: inline-block;
+      background: #667eea;
+      color: white;
+      padding: 6px 16px;
+      border-radius: 999px;
+      font-size: 13px;
+      margin-top: 16px;
+    }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <h1>¡Hola, Mundo! 👋</h1>
+    <p>Edita este HTML en el editor de la izquierda</p>
+    <div class="badge">Arcade HTML Viewer</div>
+  </div>
+</body>
+</html>`;
+
+editor.value = defaultHTML;
+updateLineNumbers();
+updateCharCount();
+
+function updateLineNumbers() {
+  const lines = editor.value.split('\n').length;
+  linesDisplay.textContent = String(lines).padStart(4, '0');
+  let nums = '';
+  for (let i = 1; i <= lines; i++) nums += i + '\n';
+  lineNumbers.textContent = nums;
+}
+
+function updateCharCount() {
+  const c = editor.value.length;
+  charCount.textContent = c.toLocaleString() + ' CHARS';
+  scoreDisplay.textContent = String(Math.min(score + c, 999999)).padStart(6, '0');
+}
+
+function syncScroll() {
+  lineNumbers.scrollTop = editor.scrollTop;
+}
+
+editor.addEventListener('scroll', syncScroll);
+
+editor.addEventListener('input', () => {
+  updateLineNumbers();
+  updateCharCount();
+  setStatus('editando', '#ffe600');
+});
+
+editor.addEventListener('keydown', e => {
+  if (e.key === 'Tab') {
+    e.preventDefault();
+    const s = editor.selectionStart;
+    editor.value = editor.value.substring(0, s) + '  ' + editor.value.substring(editor.selectionEnd);
+    editor.selectionStart = editor.selectionEnd = s + 2;
+    updateLineNumbers();
+  }
+  if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
+    e.preventDefault();
+    runCode();
+  }
+});
+
+editor.addEventListener('click', updateCursor);
+editor.addEventListener('keyup', updateCursor);
+
+function updateCursor() {
+  const text = editor.value.substring(0, editor.selectionStart);
+  const lines = text.split('\n');
+  document.getElementById('sb-line').textContent = lines.length;
+  document.getElementById('sb-col').textContent = lines[lines.length - 1].length + 1;
+}
+
+function setStatus(txt, color) {
+  statusDot.style.background = color;
+  statusDot.style.boxShadow = `0 0 8px ${color}`;
+  statusTxt.textContent = txt.toUpperCase();
+  statusTxt.style.color = color;
+  statusTxt.style.textShadow = `0 0 5px ${color}`;
+}
+
+function runCode() {
+  const html = editor.value.trim();
+  if (!html) { showToast('⚠ ESCRIBE ALGO PRIMERO'); return; }
+
+  setStatus('ejecutando...', '#ff6600');
+
+  setTimeout(() => {
+    try {
+      const blob = new Blob([html], { type: 'text/html' });
+      const url = URL.createObjectURL(blob);
+      previewFrame.src = url;
+      previewFrame.style.display = 'block';
+      placeholder.style.display = 'none';
+      document.getElementById('previewStatus').textContent = '✓ activo';
+
+      score += 100 + editor.value.length;
+      runCount++;
+      scoreDisplay.textContent = String(Math.min(score, 999999)).padStart(6, '0');
+
+      const valid = html.toLowerCase().includes('<!doctype') || html.toLowerCase().includes('<html');
+      document.getElementById('sb-valid').textContent = valid ? '✓ OK' : '~ FRAG';
+      document.getElementById('sb-valid').style.color = valid ? '#39ff14' : '#ffe600';
+
+      setStatus('ok', '#39ff14');
+      showToast('▶ RENDER COMPLETO!');
+    } catch(e) {
+      setStatus('error', '#ff0055');
+      showToast('✕ ERROR EN EL CÓDIGO');
+    }
+  }, 120);
+}
+
+function openFullView() {
+  const html = editor.value.trim();
+  if (!html) { showToast('⚠ ESCRIBE HTML PRIMERO'); return; }
+  const blob = new Blob([html], { type: 'text/html' });
+  const url = URL.createObjectURL(blob);
+  window.open(url, '_blank');
+  score += 50;
+  scoreDisplay.textContent = String(Math.min(score, 999999)).padStart(6, '0');
+  showToast('⬛ ABRIENDO VISTA COMPLETA...');
+}
+
+function copyCode() {
+  navigator.clipboard.writeText(editor.value).then(() => {
+    showToast('◈ CÓDIGO COPIADO!');
+    score += 10;
+    scoreDisplay.textContent = String(Math.min(score, 999999)).padStart(6, '0');
+  }).catch(() => {
+    editor.select();
+    document.execCommand('copy');
+    showToast('◈ CÓDIGO COPIADO!');
+  });
+}
+
+function clearCode() {
+  if (!editor.value) return;
+  if (confirm('¿Borrar todo el código? GAME OVER para tu HTML...')) {
+    editor.value = '';
+    previewFrame.style.display = 'none';
+    placeholder.style.display = 'flex';
+    document.getElementById('previewStatus').textContent = '— sin contenido —';
+    document.getElementById('sb-valid').textContent = '—';
+    updateLineNumbers();
+    updateCharCount();
+    setStatus('listo', '#39ff14');
+    showToast('✕ CÓDIGO BORRADO');
+  }
+}
+
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2200);
+}
+
+// RESIZER
+const resizer = document.getElementById('resizer');
+const editorPanel = document.getElementById('editorPanel');
+const previewPanel = document.getElementById('previewPanel');
+const mainArea = document.getElementById('mainArea');
+
+let isResizing = false;
+resizer.addEventListener('mousedown', e => {
+  isResizing = true;
+  resizer.classList.add('dragging');
+  document.body.style.cursor = 'col-resize';
+  document.body.style.userSelect = 'none';
+});
+
+document.addEventListener('mousemove', e => {
+  if (!isResizing) return;
+  const rect = mainArea.getBoundingClientRect();
+  const pct = ((e.clientX - rect.left) / rect.width) * 100;
+  const clamped = Math.max(20, Math.min(80, pct));
+  editorPanel.style.width = clamped + '%';
+  previewPanel.style.flex = 'unset';
+  previewPanel.style.width = (100 - clamped - 0.4) + '%';
+});
+
+document.addEventListener('mouseup', () => {
+  if (isResizing) {
+    isResizing = false;
+    resizer.classList.remove('dragging');
+    document.body.style.cursor = '';
+    document.body.style.userSelect = '';
+  }
+});
+
+// Auto-run on load
+setTimeout(() => { runCode(); }, 400);
+
+// Keyboard shortcut hint
+setStatus('listo', '#39ff14');
+</script>
+</body>
+</html>
