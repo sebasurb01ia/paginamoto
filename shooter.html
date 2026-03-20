@@ -1,0 +1,984 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>URL SHORTENER — APP ARCADE</title>
+<link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Orbitron:wght@400;700;900&family=Share+Tech+Mono&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg:     #050510;
+    --bg2:    #0a0a1f;
+    --cyan:   #00f5ff;
+    --pink:   #ff006e;
+    --yellow: #ffee00;
+    --green:  #39ff14;
+    --purple: #bf00ff;
+    --orange: #ff6600;
+    --card-bg:     #0d0d2b;
+    --card-border: #1a1a4e;
+    --text:   #e0e0ff;
+    --dim:    #5555aa;
+    --accent: var(--green);
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Share Tech Mono', monospace;
+    min-height: 100vh;
+    overflow-x: hidden;
+    cursor: crosshair;
+  }
+
+  /* SCANLINES */
+  body::before {
+    content: '';
+    position: fixed; inset: 0;
+    background: repeating-linear-gradient(
+      0deg, transparent, transparent 2px,
+      rgba(0,0,0,0.08) 2px, rgba(0,0,0,0.08) 4px
+    );
+    pointer-events: none;
+    z-index: 9999;
+  }
+
+  /* GRID BG */
+  body::after {
+    content: '';
+    position: fixed; inset: 0;
+    background-image:
+      linear-gradient(rgba(0,245,255,0.03) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(0,245,255,0.03) 1px, transparent 1px);
+    background-size: 40px 40px;
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  /* ===== REDIRECT SCREEN ===== */
+  #redirectScreen {
+    display: none;
+    position: fixed; inset: 0;
+    background: var(--bg);
+    z-index: 1000;
+    align-items: center;
+    justify-content: center;
+    flex-direction: column;
+    gap: 24px;
+    text-align: center;
+  }
+
+  #redirectScreen.active { display: flex; }
+
+  .redirect-title {
+    font-family: 'Press Start 2P', monospace;
+    font-size: clamp(12px, 3vw, 20px);
+    color: var(--green);
+    text-shadow: 0 0 20px var(--green);
+  }
+
+  .redirect-url {
+    font-size: 13px;
+    color: var(--dim);
+    max-width: 500px;
+    word-break: break-all;
+    padding: 0 20px;
+  }
+
+  .redirect-bar-wrap {
+    width: 300px;
+    height: 12px;
+    border: 1px solid var(--green);
+    background: rgba(0,0,0,0.5);
+    overflow: hidden;
+  }
+
+  .redirect-bar {
+    height: 100%;
+    background: var(--green);
+    width: 0%;
+    box-shadow: 0 0 10px var(--green);
+    transition: width 1.8s linear;
+  }
+
+  .redirect-count {
+    font-family: 'Press Start 2P', monospace;
+    font-size: 8px;
+    color: var(--green);
+  }
+
+  /* ===== HEADER ===== */
+  header {
+    position: relative;
+    z-index: 10;
+    text-align: center;
+    padding: 40px 20px 28px;
+    border-bottom: 1px solid rgba(57,255,20,0.2);
+  }
+
+  .header-glow {
+    position: absolute; top: 0; left: 50%;
+    transform: translateX(-50%);
+    width: 500px; height: 180px;
+    background: radial-gradient(ellipse, rgba(57,255,20,0.07) 0%, transparent 70%);
+    pointer-events: none;
+  }
+
+  .back-btn {
+    position: absolute;
+    top: 20px; left: 20px;
+    font-family: 'Press Start 2P', monospace;
+    font-size: 7px;
+    color: var(--dim);
+    text-decoration: none;
+    border: 1px solid var(--dim);
+    padding: 7px 10px;
+    transition: all 0.2s;
+    z-index: 10;
+    cursor: pointer;
+    background: transparent;
+  }
+
+  .back-btn:hover {
+    color: var(--cyan);
+    border-color: var(--cyan);
+    box-shadow: 0 0 10px rgba(0,245,255,0.3);
+  }
+
+  .app-badge {
+    display: inline-block;
+    font-family: 'Press Start 2P', monospace;
+    font-size: 7px;
+    color: #000;
+    background: var(--green);
+    padding: 4px 10px;
+    margin-bottom: 14px;
+    box-shadow: 0 0 12px var(--green);
+    letter-spacing: 1px;
+  }
+
+  .main-title {
+    font-family: 'Press Start 2P', monospace;
+    font-size: clamp(16px, 4vw, 30px);
+    color: var(--green);
+    text-shadow:
+      0 0 10px var(--green),
+      0 0 25px var(--green),
+      3px 3px 0 #004400;
+    letter-spacing: 2px;
+    line-height: 1.4;
+  }
+
+  .subtitle {
+    font-family: 'Orbitron', sans-serif;
+    font-size: 10px;
+    color: var(--dim);
+    letter-spacing: 4px;
+    margin-top: 10px;
+  }
+
+  /* STATS */
+  .stats-bar {
+    display: flex;
+    justify-content: center;
+    gap: 28px;
+    margin-top: 18px;
+    flex-wrap: wrap;
+  }
+
+  .stat {
+    font-family: 'Press Start 2P', monospace;
+    font-size: 7px;
+    color: var(--dim);
+  }
+
+  .stat span { color: var(--green); text-shadow: 0 0 6px var(--green); }
+
+  /* ===== MAIN ===== */
+  main {
+    position: relative;
+    z-index: 10;
+    max-width: 860px;
+    margin: 0 auto;
+    padding: 32px 20px 60px;
+  }
+
+  /* ===== INPUT PANEL ===== */
+  .input-panel {
+    background: var(--card-bg);
+    border: 1px solid rgba(57,255,20,0.3);
+    padding: 28px;
+    margin-bottom: 32px;
+    position: relative;
+    box-shadow: 0 0 30px rgba(57,255,20,0.05);
+  }
+
+  .input-panel::before {
+    content: '▶ NUEVO ENLACE';
+    position: absolute;
+    top: -10px; left: 20px;
+    background: var(--bg);
+    padding: 0 10px;
+    font-family: 'Press Start 2P', monospace;
+    font-size: 7px;
+    color: var(--green);
+    letter-spacing: 1px;
+  }
+
+  .input-row {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 12px;
+    flex-wrap: wrap;
+  }
+
+  .field-group {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    flex: 1;
+    min-width: 200px;
+  }
+
+  .field-label {
+    font-family: 'Press Start 2P', monospace;
+    font-size: 6px;
+    color: var(--dim);
+    letter-spacing: 1px;
+  }
+
+  .arcade-input {
+    background: rgba(0,0,0,0.5);
+    border: 1px solid rgba(57,255,20,0.4);
+    color: var(--green);
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 13px;
+    padding: 10px 14px;
+    outline: none;
+    width: 100%;
+    letter-spacing: 1px;
+    transition: all 0.2s;
+    box-shadow: inset 0 0 10px rgba(0,0,0,0.4);
+  }
+
+  .arcade-input::placeholder { color: #2a2a5a; }
+
+  .arcade-input:focus {
+    border-color: var(--green);
+    box-shadow: 0 0 14px rgba(57,255,20,0.25), inset 0 0 10px rgba(0,0,0,0.4);
+    color: #fff;
+  }
+
+  .arcade-input.error {
+    border-color: var(--pink);
+    box-shadow: 0 0 14px rgba(255,0,110,0.3);
+    color: var(--pink);
+  }
+
+  .short-prefix {
+    font-size: 12px;
+    color: var(--dim);
+    padding: 10px 10px 10px 14px;
+    background: rgba(0,0,0,0.5);
+    border: 1px solid rgba(57,255,20,0.2);
+    border-right: none;
+    white-space: nowrap;
+    display: flex;
+    align-items: center;
+  }
+
+  .short-input-wrap {
+    display: flex;
+    flex: 1;
+  }
+
+  .short-input-wrap .arcade-input {
+    border-left: none;
+  }
+
+  .submit-btn {
+    font-family: 'Press Start 2P', monospace;
+    font-size: 9px;
+    padding: 12px 24px;
+    background: var(--green);
+    color: #000;
+    border: none;
+    cursor: pointer;
+    letter-spacing: 1px;
+    transition: all 0.15s;
+    align-self: flex-end;
+    white-space: nowrap;
+    box-shadow: 0 0 16px rgba(57,255,20,0.3);
+  }
+
+  .submit-btn:hover {
+    background: #fff;
+    box-shadow: 0 0 24px rgba(57,255,20,0.6);
+    transform: translateY(-2px);
+  }
+
+  .submit-btn:active { transform: translateY(0); }
+
+  /* ERROR / SUCCESS MSG */
+  .msg-box {
+    font-family: 'Press Start 2P', monospace;
+    font-size: 7px;
+    padding: 10px 14px;
+    margin-top: 10px;
+    display: none;
+    letter-spacing: 1px;
+    line-height: 1.8;
+  }
+
+  .msg-box.error   { border: 1px solid var(--pink);  color: var(--pink);  background: rgba(255,0,110,0.07);  display: block; }
+  .msg-box.success { border: 1px solid var(--green); color: var(--green); background: rgba(57,255,20,0.07); display: block; }
+
+  /* ===== RESULT CARD ===== */
+  .result-card {
+    background: rgba(57,255,20,0.05);
+    border: 1px solid var(--green);
+    padding: 16px 20px;
+    margin-top: 14px;
+    display: none;
+    box-shadow: 0 0 20px rgba(57,255,20,0.1);
+    animation: fadeIn 0.3s ease;
+  }
+
+  .result-card.visible { display: block; }
+
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(8px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
+  .result-label {
+    font-family: 'Press Start 2P', monospace;
+    font-size: 6px;
+    color: var(--green);
+    margin-bottom: 8px;
+    letter-spacing: 1px;
+  }
+
+  .result-link-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+  }
+
+  .result-link {
+    font-size: 14px;
+    color: var(--cyan);
+    text-decoration: none;
+    flex: 1;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    cursor: pointer;
+  }
+
+  .result-link:hover { color: #fff; text-decoration: underline; }
+
+  .copy-btn {
+    font-family: 'Press Start 2P', monospace;
+    font-size: 6px;
+    padding: 7px 12px;
+    background: transparent;
+    border: 1px solid var(--cyan);
+    color: var(--cyan);
+    cursor: pointer;
+    transition: all 0.15s;
+    white-space: nowrap;
+    flex-shrink: 0;
+  }
+
+  .copy-btn:hover  { background: var(--cyan); color: #000; box-shadow: 0 0 12px var(--cyan); }
+  .copy-btn.copied { background: var(--green); border-color: var(--green); color: #000; }
+
+  /* ===== TABLE ===== */
+  .table-panel {
+    background: var(--card-bg);
+    border: 1px solid var(--card-border);
+    position: relative;
+  }
+
+  .table-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 14px 20px;
+    border-bottom: 1px solid var(--card-border);
+    gap: 12px;
+    flex-wrap: wrap;
+  }
+
+  .table-title {
+    font-family: 'Press Start 2P', monospace;
+    font-size: 8px;
+    color: var(--green);
+    letter-spacing: 1px;
+  }
+
+  .table-search {
+    background: rgba(0,0,0,0.4);
+    border: 1px solid rgba(57,255,20,0.3);
+    color: var(--green);
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 12px;
+    padding: 6px 12px;
+    outline: none;
+    width: 200px;
+    transition: all 0.2s;
+  }
+
+  .table-search::placeholder { color: var(--dim); }
+  .table-search:focus { border-color: var(--green); box-shadow: 0 0 10px rgba(57,255,20,0.2); }
+
+  .clear-all-btn {
+    font-family: 'Press Start 2P', monospace;
+    font-size: 6px;
+    padding: 6px 10px;
+    background: transparent;
+    border: 1px solid var(--pink);
+    color: var(--pink);
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+
+  .clear-all-btn:hover { background: var(--pink); color: #fff; }
+
+  /* TABLE ITSELF */
+  .links-table {
+    width: 100%;
+    border-collapse: collapse;
+  }
+
+  .links-table th {
+    font-family: 'Press Start 2P', monospace;
+    font-size: 6px;
+    color: var(--dim);
+    padding: 10px 16px;
+    text-align: left;
+    border-bottom: 1px solid var(--card-border);
+    letter-spacing: 1px;
+    background: rgba(0,0,0,0.2);
+    white-space: nowrap;
+  }
+
+  .links-table td {
+    padding: 12px 16px;
+    border-bottom: 1px solid rgba(26,26,78,0.6);
+    font-size: 12px;
+    vertical-align: middle;
+  }
+
+  .links-table tr:hover td { background: rgba(57,255,20,0.03); }
+  .links-table tr:last-child td { border-bottom: none; }
+
+  .td-short {
+    color: var(--green);
+    font-family: 'Orbitron', sans-serif;
+    font-size: 11px;
+    font-weight: 700;
+    white-space: nowrap;
+  }
+
+  .td-short a {
+    color: inherit;
+    text-decoration: none;
+    cursor: pointer;
+  }
+
+  .td-short a:hover { text-shadow: 0 0 8px var(--green); text-decoration: underline; }
+
+  .td-original {
+    color: var(--dim);
+    max-width: 260px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .td-original a { color: inherit; text-decoration: none; }
+  .td-original a:hover { color: var(--cyan); }
+
+  .td-date { color: var(--dim); font-size: 11px; white-space: nowrap; }
+
+  .td-clicks {
+    font-family: 'Orbitron', sans-serif;
+    font-weight: 700;
+    font-size: 13px;
+    color: var(--yellow);
+    text-shadow: 0 0 6px var(--yellow);
+    white-space: nowrap;
+    text-align: center;
+  }
+
+  .td-actions {
+    display: flex;
+    gap: 6px;
+    align-items: center;
+  }
+
+  .action-btn {
+    font-family: 'Press Start 2P', monospace;
+    font-size: 5px;
+    padding: 5px 8px;
+    border: 1px solid;
+    background: transparent;
+    cursor: pointer;
+    transition: all 0.15s;
+    white-space: nowrap;
+  }
+
+  .action-btn.copy  { color: var(--cyan);  border-color: var(--cyan);  }
+  .action-btn.open  { color: var(--green); border-color: var(--green); }
+  .action-btn.del   { color: var(--pink);  border-color: var(--pink);  }
+
+  .action-btn.copy:hover  { background: var(--cyan);  color: #000; }
+  .action-btn.open:hover  { background: var(--green); color: #000; }
+  .action-btn.del:hover   { background: var(--pink);  color: #fff; }
+
+  .action-btn.copied { background: var(--green); border-color: var(--green); color: #000; }
+
+  /* EMPTY TABLE */
+  .empty-table {
+    text-align: center;
+    padding: 60px 20px;
+    font-family: 'Press Start 2P', monospace;
+    font-size: 8px;
+    color: var(--dim);
+    line-height: 3;
+  }
+
+  .empty-table strong { color: var(--green); font-size: 11px; display: block; }
+
+  /* SCROLL */
+  .table-scroll { overflow-x: auto; }
+
+  /* TOAST */
+  #toast {
+    position: fixed;
+    bottom: 24px; right: 24px;
+    background: var(--card-bg);
+    border: 1px solid var(--green);
+    color: var(--green);
+    font-family: 'Press Start 2P', monospace;
+    font-size: 7px;
+    padding: 12px 18px;
+    z-index: 10000;
+    box-shadow: 0 0 20px rgba(57,255,20,0.3);
+    transform: translateY(80px);
+    opacity: 0;
+    transition: all 0.3s ease;
+    letter-spacing: 1px;
+    max-width: 280px;
+    line-height: 1.8;
+  }
+
+  #toast.show { transform: translateY(0); opacity: 1; }
+
+  /* FOOTER */
+  footer {
+    position: relative; z-index: 10;
+    text-align: center;
+    padding: 18px;
+    border-top: 1px solid rgba(57,255,20,0.1);
+    font-family: 'Press Start 2P', monospace;
+    font-size: 7px;
+    color: var(--dim);
+    line-height: 2.5;
+  }
+
+  footer a { color: var(--green); text-decoration: none; }
+  footer a:hover { text-shadow: 0 0 8px var(--green); }
+
+  @media (max-width: 600px) {
+    .input-row { flex-direction: column; }
+    .submit-btn { width: 100%; }
+    .links-table th:nth-child(3),
+    .links-table td:nth-child(3) { display: none; }
+  }
+</style>
+</head>
+<body>
+
+<!-- REDIRECT SCREEN -->
+<div id="redirectScreen">
+  <div class="app-badge">✂ URL SHORTENER</div>
+  <div class="redirect-title">⚡ REDIRECCIONANDO...</div>
+  <div class="redirect-url" id="redirectTarget">—</div>
+  <div class="redirect-bar-wrap">
+    <div class="redirect-bar" id="redirectBar"></div>
+  </div>
+  <div class="redirect-count" id="redirectCountdown">ESPERA 2 SEG...</div>
+</div>
+
+<!-- HEADER -->
+<header>
+  <div class="header-glow"></div>
+  <a class="back-btn" href="arcade-gallery.html">◀ ARCADE</a>
+  <div class="app-badge">✂ HERRAMIENTA</div>
+  <h1 class="main-title">URL SHORTENER</h1>
+  <p class="subtitle">RECORTADOR DE ENLACES</p>
+  <div class="stats-bar">
+    <div class="stat">ENLACES <span id="statTotal">0</span></div>
+    <div class="stat">CLICS TOTALES <span id="statClicks">0</span></div>
+    <div class="stat">HOY <span id="statToday">0</span></div>
+  </div>
+</header>
+
+<!-- MAIN -->
+<main>
+
+  <!-- INPUT PANEL -->
+  <div class="input-panel">
+    <div class="input-row">
+      <div class="field-group" style="flex:2; min-width:260px;">
+        <div class="field-label">URL ORIGINAL *</div>
+        <input class="arcade-input" id="urlInput" type="text" placeholder="https://ejemplo.com/url-muy-larga/que-quieres-acortar" autocomplete="off" spellcheck="false">
+      </div>
+      <div class="field-group" style="flex:1; min-width:180px;">
+        <div class="field-label">ALIAS PERSONALIZADO (opcional)</div>
+        <div class="short-input-wrap">
+          <div class="short-prefix">#</div>
+          <input class="arcade-input" id="aliasInput" type="text" placeholder="mi-link" autocomplete="off" spellcheck="false" maxlength="20">
+        </div>
+      </div>
+      <button class="submit-btn" id="shortenBtn">▶ ACORTAR</button>
+    </div>
+    <div class="msg-box" id="msgBox"></div>
+    <div class="result-card" id="resultCard">
+      <div class="result-label">✔ ENLACE CREADO — COPIA Y COMPARTE:</div>
+      <div class="result-link-row">
+        <span class="result-link" id="resultLink"></span>
+        <button class="copy-btn" id="resultCopyBtn">COPIAR</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- TABLE PANEL -->
+  <div class="table-panel">
+    <div class="table-header">
+      <div class="table-title">📋 MIS ENLACES</div>
+      <input class="table-search" id="tableSearch" type="text" placeholder="BUSCAR...">
+      <button class="clear-all-btn" id="clearAllBtn">✕ BORRAR TODO</button>
+    </div>
+    <div class="table-scroll">
+      <table class="links-table" id="linksTable">
+        <thead>
+          <tr>
+            <th>CÓDIGO</th>
+            <th>DESTINO</th>
+            <th>FECHA</th>
+            <th style="text-align:center">CLICS</th>
+            <th>ACCIONES</th>
+          </tr>
+        </thead>
+        <tbody id="linksBody"></tbody>
+      </table>
+      <div class="empty-table" id="emptyTable">
+        <strong>NO HAY ENLACES</strong>
+        Pega una URL arriba<br>y crea tu primer enlace corto
+      </div>
+    </div>
+  </div>
+
+</main>
+
+<!-- FOOTER -->
+<footer>
+  <div>✂ URL SHORTENER v1.0 — <a href="arcade-gallery.html">◀ VOLVER AL ARCADE</a></div>
+  <div>LOS DATOS SE GUARDAN EN TU NAVEGADOR · <span id="footerYear"></span></div>
+</footer>
+
+<!-- TOAST -->
+<div id="toast"></div>
+
+<script>
+  document.getElementById('footerYear').textContent = new Date().getFullYear();
+
+  // ── Storage helpers ──
+  const STORE_KEY = 'arcade_urls';
+
+  function loadLinks() {
+    try { return JSON.parse(localStorage.getItem(STORE_KEY)) || []; }
+    catch { return []; }
+  }
+
+  function saveLinks(links) {
+    localStorage.setItem(STORE_KEY, JSON.stringify(links));
+  }
+
+  // ── Code generator ──
+  function genCode(len = 5) {
+    const chars = 'abcdefghijklmnopqrstuvwxyz0123456789';
+    return Array.from({length: len}, () => chars[Math.floor(Math.random() * chars.length)]).join('');
+  }
+
+  // ── Toast ──
+  function showToast(msg, dur = 2200) {
+    const t = document.getElementById('toast');
+    t.textContent = msg;
+    t.classList.add('show');
+    setTimeout(() => t.classList.remove('show'), dur);
+  }
+
+  // ── Stats ──
+  function updateStats() {
+    const links = loadLinks();
+    const totalClicks = links.reduce((s, l) => s + (l.clicks || 0), 0);
+    const today = new Date().toDateString();
+    const todayCount = links.filter(l => new Date(l.date).toDateString() === today).length;
+    document.getElementById('statTotal').textContent  = links.length;
+    document.getElementById('statClicks').textContent = totalClicks;
+    document.getElementById('statToday').textContent  = todayCount;
+  }
+
+  // ── Build short URL ──
+  function buildShortURL(code) {
+    return window.location.href.split('#')[0] + '#' + code;
+  }
+
+  // ── Render table ──
+  function renderTable(filter = '') {
+    const links = loadLinks();
+    const tbody = document.getElementById('linksBody');
+    const empty = document.getElementById('emptyTable');
+    const q = filter.toLowerCase().trim();
+
+    const filtered = q
+      ? links.filter(l => l.code.includes(q) || l.url.toLowerCase().includes(q))
+      : links;
+
+    tbody.innerHTML = '';
+
+    if (!filtered.length) {
+      empty.style.display = 'block';
+      return;
+    }
+
+    empty.style.display = 'none';
+
+    // newest first
+    [...filtered].reverse().forEach(link => {
+      const shortURL = buildShortURL(link.code);
+      const date = new Date(link.date).toLocaleDateString('es-CO', {day:'2-digit', month:'short', year:'2-digit'});
+      const displayURL = link.url.length > 50 ? link.url.slice(0, 47) + '...' : link.url;
+
+      const tr = document.createElement('tr');
+      tr.innerHTML = `
+        <td class="td-short"><a onclick="handleShortClick('${link.code}'); return false;" href="#">#${link.code}</a></td>
+        <td class="td-original" title="${link.url}"><a href="${link.url}" target="_blank" rel="noopener">${displayURL}</a></td>
+        <td class="td-date">${date}</td>
+        <td class="td-clicks">${link.clicks || 0}</td>
+        <td>
+          <div class="td-actions">
+            <button class="action-btn copy" onclick="copyLink('${link.code}', this)">COPIAR</button>
+            <button class="action-btn open" onclick="handleShortClick('${link.code}')">ABRIR</button>
+            <button class="action-btn del"  onclick="deleteLink('${link.code}')">✕</button>
+          </div>
+        </td>
+      `;
+      tbody.appendChild(tr);
+    });
+
+    updateStats();
+  }
+
+  // ── Copy link ──
+  function copyLink(code, btn) {
+    const url = buildShortURL(code);
+    navigator.clipboard.writeText(url).then(() => {
+      if (btn) {
+        btn.textContent = '✔ OK';
+        btn.classList.add('copied');
+        setTimeout(() => { btn.textContent = 'COPIAR'; btn.classList.remove('copied'); }, 1800);
+      }
+      showToast('✔ ENLACE COPIADO AL PORTAPAPELES');
+    });
+  }
+
+  // ── Open/redirect short link ──
+  function handleShortClick(code) {
+    const links = loadLinks();
+    const link = links.find(l => l.code === code);
+    if (!link) { showToast('⚠ CÓDIGO NO ENCONTRADO'); return; }
+
+    // increment click
+    link.clicks = (link.clicks || 0) + 1;
+    saveLinks(links);
+    renderTable(document.getElementById('tableSearch').value);
+
+    // show redirect screen
+    const screen = document.getElementById('redirectScreen');
+    document.getElementById('redirectTarget').textContent = link.url;
+    screen.classList.add('active');
+
+    const bar = document.getElementById('redirectBar');
+    const countdown = document.getElementById('redirectCountdown');
+    bar.style.width = '0%';
+
+    setTimeout(() => { bar.style.width = '100%'; }, 50);
+
+    let t = 2;
+    countdown.textContent = `ESPERA ${t} SEG...`;
+    const interval = setInterval(() => {
+      t--;
+      countdown.textContent = t > 0 ? `ESPERA ${t} SEG...` : '¡YENDO!';
+      if (t <= 0) {
+        clearInterval(interval);
+        window.open(link.url, '_blank');
+        setTimeout(() => {
+          screen.classList.remove('active');
+          bar.style.transition = 'none';
+          bar.style.width = '0%';
+          setTimeout(() => { bar.style.transition = 'width 1.8s linear'; }, 50);
+        }, 500);
+      }
+    }, 1000);
+  }
+
+  // ── Delete link ──
+  function deleteLink(code) {
+    if (!confirm('¿Borrar este enlace?')) return;
+    const links = loadLinks().filter(l => l.code !== code);
+    saveLinks(links);
+    renderTable(document.getElementById('tableSearch').value);
+    showToast('🗑 ENLACE ELIMINADO');
+  }
+
+  // ── Shorten ──
+  document.getElementById('shortenBtn').addEventListener('click', shortenURL);
+  document.getElementById('urlInput').addEventListener('keydown', e => { if (e.key === 'Enter') shortenURL(); });
+
+  function shortenURL() {
+    const urlVal   = document.getElementById('urlInput').value.trim();
+    const aliasVal = document.getElementById('aliasInput').value.trim().toLowerCase().replace(/[^a-z0-9\-_]/g, '');
+    const msg      = document.getElementById('msgBox');
+    const result   = document.getElementById('resultCard');
+
+    msg.className = 'msg-box';
+    msg.style.display = 'none';
+    result.classList.remove('visible');
+
+    // Validate URL
+    if (!urlVal) {
+      msg.textContent = '⚠ INGRESA UNA URL';
+      msg.className = 'msg-box error';
+      document.getElementById('urlInput').classList.add('error');
+      setTimeout(() => document.getElementById('urlInput').classList.remove('error'), 1500);
+      return;
+    }
+
+    let finalURL = urlVal;
+    if (!/^https?:\/\//i.test(finalURL)) finalURL = 'https://' + finalURL;
+
+    try { new URL(finalURL); } catch {
+      msg.textContent = '⚠ URL INVÁLIDA — VERIFICA EL FORMATO';
+      msg.className = 'msg-box error';
+      return;
+    }
+
+    const links = loadLinks();
+
+    // Check alias
+    if (aliasVal) {
+      if (aliasVal.length < 2) {
+        msg.textContent = '⚠ EL ALIAS DEBE TENER AL MENOS 2 CARACTERES';
+        msg.className = 'msg-box error';
+        return;
+      }
+      if (links.find(l => l.code === aliasVal)) {
+        msg.textContent = `⚠ EL ALIAS "#${aliasVal}" YA EXISTE — ELIGE OTRO`;
+        msg.className = 'msg-box error';
+        return;
+      }
+    }
+
+    // Check duplicate URL
+    const existing = links.find(l => l.url === finalURL);
+    if (existing) {
+      const shortURL = buildShortURL(existing.code);
+      document.getElementById('resultLink').textContent = shortURL;
+      document.getElementById('resultLink').onclick = () => handleShortClick(existing.code);
+      result.classList.add('visible');
+      msg.textContent = `ℹ ESTA URL YA EXISTE CON EL CÓDIGO #${existing.code}`;
+      msg.className = 'msg-box success';
+      return;
+    }
+
+    const code = aliasVal || genCode();
+
+    links.push({
+      code,
+      url: finalURL,
+      date: new Date().toISOString(),
+      clicks: 0
+    });
+
+    saveLinks(links);
+    renderTable(document.getElementById('tableSearch').value);
+
+    const shortURL = buildShortURL(code);
+    document.getElementById('resultLink').textContent = shortURL;
+    document.getElementById('resultLink').onclick = () => handleShortClick(code);
+    result.classList.add('visible');
+
+    // Auto-copy
+    navigator.clipboard.writeText(shortURL).catch(() => {});
+
+    msg.textContent = `✔ ENLACE CREADO: #${code} — COPIADO AL PORTAPAPELES`;
+    msg.className = 'msg-box success';
+
+    document.getElementById('urlInput').value = '';
+    document.getElementById('aliasInput').value = '';
+
+    // Setup copy button
+    const copyBtn = document.getElementById('resultCopyBtn');
+    copyBtn.onclick = () => {
+      navigator.clipboard.writeText(shortURL).then(() => {
+        copyBtn.textContent = '✔ COPIADO';
+        copyBtn.classList.add('copied');
+        setTimeout(() => { copyBtn.textContent = 'COPIAR'; copyBtn.classList.remove('copied'); }, 1800);
+      });
+    };
+  }
+
+  // ── Clear all ──
+  document.getElementById('clearAllBtn').addEventListener('click', () => {
+    if (!loadLinks().length) return;
+    if (!confirm('¿Borrar TODOS los enlaces? Esta acción no se puede deshacer.')) return;
+    localStorage.removeItem(STORE_KEY);
+    renderTable();
+    showToast('🗑 TODOS LOS ENLACES ELIMINADOS');
+  });
+
+  // ── Table search ──
+  document.getElementById('tableSearch').addEventListener('input', e => {
+    renderTable(e.target.value);
+  });
+
+  // ── Handle hash redirect on load ──
+  function checkRedirect() {
+    const hash = window.location.hash.slice(1);
+    if (!hash) return;
+    const links = loadLinks();
+    const link = links.find(l => l.code === hash);
+    if (link) {
+      // Remove hash so back button works
+      history.replaceState(null, '', window.location.pathname);
+      handleShortClick(hash);
+    }
+  }
+
+  // ── Init ──
+  renderTable();
+  updateStats();
+  checkRedirect();
+</script>
+</body>
+</html>
