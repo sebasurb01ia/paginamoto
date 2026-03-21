@@ -143,7 +143,88 @@ body::after {
   z-index:2;
 }
 
-/* ══════════ NAV ══════════ */
+/* ══════════ HAMBURGER ══════════ */
+.nav-hamburger {
+  display:none;
+  flex-direction:column;justify-content:center;align-items:center;
+  gap:5px;
+  width:38px;height:38px;
+  background:rgba(0,30,70,.5);
+  border:1px solid rgba(0,204,255,.35);
+  cursor:pointer;z-index:1002;
+  flex-shrink:0;
+  transition:border-color .2s;
+}
+.nav-hamburger:hover { border-color:var(--b1);box-shadow:var(--g1) }
+.ham-line {
+  width:20px;height:2px;
+  background:var(--b1);
+  box-shadow:0 0 6px var(--b1);
+  transition:transform .25s ease, opacity .25s ease;
+  transform-origin:center;
+}
+.nav-hamburger.open .ham-line:nth-child(1){ transform:translateY(7px) rotate(45deg) }
+.nav-hamburger.open .ham-line:nth-child(2){ opacity:0;transform:scaleX(0) }
+.nav-hamburger.open .ham-line:nth-child(3){ transform:translateY(-7px) rotate(-45deg) }
+
+/* ── Mobile menu overlay ── */
+.mobile-menu {
+  position:fixed;
+  top:var(--nav-h);left:0;right:0;
+  background:rgba(0,8,20,.97);
+  backdrop-filter:blur(20px);
+  border-bottom:1px solid rgba(0,204,255,.2);
+  z-index:999;
+  padding:1.5rem var(--px) 2rem;
+  transform:translateY(-110%);
+  transition:transform .3s cubic-bezier(.4,0,.2,1);
+  pointer-events:none;
+}
+.mobile-menu.open {
+  transform:translateY(0);
+  pointer-events:all;
+}
+.mobile-menu ul {
+  list-style:none;
+  display:flex;flex-direction:column;gap:.2rem;
+  margin-bottom:1.4rem;
+}
+.mobile-menu ul li a {
+  display:block;
+  font-family:var(--pixel);font-size:.55rem;
+  letter-spacing:.18em;
+  color:#8ec8e8;
+  text-decoration:none;text-transform:uppercase;
+  padding:.75rem 0;
+  border-bottom:1px solid rgba(0,100,200,.15);
+  transition:color .2s,padding-left .2s;
+}
+.mobile-menu ul li:last-child a { border-bottom:none }
+.mobile-menu ul li a:hover,
+.mobile-menu ul li a:active {
+  color:var(--b1);
+  padding-left:.6rem;
+  text-shadow:var(--g1);
+}
+.mobile-menu ul li a::before {
+  content:'▷ ';color:var(--b2);opacity:.6;
+}
+.mob-cta-row {
+  display:flex;gap:.8rem;align-items:center;flex-wrap:wrap;
+  padding-top:.8rem;
+}
+.mob-status {
+  display:flex;align-items:center;gap:.4rem;
+  font-family:var(--pixel);font-size:.35rem;
+  color:var(--b4);letter-spacing:.1em;
+}
+.mob-status .dot-live {
+  width:6px;height:6px;background:var(--b4);
+  border-radius:50%;box-shadow:var(--g3);
+  animation:pulse 1.5s ease-in-out infinite;
+}
+
+
 nav {
   position:fixed;top:0;left:0;right:0;z-index:1000;
   display:flex;align-items:center;justify-content:space-between;
@@ -1198,6 +1279,8 @@ footer {
 @media(max-width:640px){
   .nav-links { display:none }
   .nav-status { display:none }
+  .nav-hire { display:none }
+  .nav-hamburger { display:flex }
   .hero-stats-strip { gap:1.2rem }
   /* Mobile text boost */
   #about .bio-text p,
@@ -1240,8 +1323,34 @@ footer {
     <span class="dot-live"></span>
     <span>DISPONIBLE REMOTO</span>
   </div>
-  <a href="/cdn-cgi/l/email-protection#5a293f383b292f28386a6b37221a3d373b333674393537" class="nav-hire">INSERT COIN</a>
+  <a href="mailto:sebasurb01mx@gmail.com" class="nav-hire">INSERT COIN</a>
+  <!-- Hamburger -->
+  <button class="nav-hamburger" id="hamburger" aria-label="Menu">
+    <span class="ham-line"></span>
+    <span class="ham-line"></span>
+    <span class="ham-line"></span>
+  </button>
 </nav>
+
+<!-- Mobile menu overlay -->
+<div class="mobile-menu" id="mobileMenu">
+  <ul>
+    <li><a href="#about"      class="mob-link">Sobre Mí</a></li>
+    <li><a href="#experience" class="mob-link">Experiencia</a></li>
+    <li><a href="#missions"   class="mob-link">Proyectos</a></li>
+    <li><a href="#skills"     class="mob-link">Habilidades</a></li>
+    <li><a href="#education"  class="mob-link">Formación</a></li>
+    <li><a href="#contact"    class="mob-link">Contacto</a></li>
+    <li><a href="apps.html"   class="mob-link">Apps</a></li>
+  </ul>
+  <div class="mob-cta-row">
+    <a href="mailto:sebasurb01mx@gmail.com" class="btn-insert" style="font-size:.38rem;padding:.55rem 1.2rem">▶ CONTÁCTAME</a>
+    <div class="mob-status">
+      <span class="dot-live"></span>
+      <span>OPEN TO WORK</span>
+    </div>
+  </div>
+</div>
 
 <!-- ══════════ HERO ══════════ -->
 <section id="hero">
@@ -2148,6 +2257,32 @@ function animCursor(){
   requestAnimationFrame(animCursor);
 }
 animCursor();
+
+/* ── HAMBURGER MENU ── */
+const hamburger   = document.getElementById('hamburger');
+const mobileMenu  = document.getElementById('mobileMenu');
+function closeMenu(){
+  hamburger.classList.remove('open');
+  mobileMenu.classList.remove('open');
+  document.body.style.overflow='';
+}
+hamburger.addEventListener('click',()=>{
+  const isOpen = mobileMenu.classList.toggle('open');
+  hamburger.classList.toggle('open', isOpen);
+  document.body.style.overflow = isOpen ? 'hidden' : '';
+});
+// Close on link tap
+document.querySelectorAll('.mob-link').forEach(a=>{
+  a.addEventListener('click', closeMenu);
+});
+// Close on outside tap
+document.addEventListener('click', e=>{
+  if(mobileMenu.classList.contains('open')
+     && !mobileMenu.contains(e.target)
+     && !hamburger.contains(e.target)){
+    closeMenu();
+  }
+});
 
 /* ── PARTICLE CANVAS ── */
 const bgCanvas=document.getElementById('bg-canvas');
