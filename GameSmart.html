@@ -7,7 +7,7 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="theme-color" content="#080b14">
-<title>Brain Training</title>
+<title>ARCADE BRAIN — Adult Edition</title>
 <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Rajdhani:wght@300;400;600;700&display=swap" rel="stylesheet">
 <style>
 /* ============================================================
@@ -845,6 +845,79 @@ body::before {
   .simon-btn { height:95px; }
   .gc { padding:13px 10px 12px; }
 }
+
+/* ============================================================
+   ARCADE ENHANCEMENTS
+============================================================ */
+.arcade-marquee {
+  background: linear-gradient(90deg, #060910, #0f1828, #060910);
+  border-top: 1px solid rgba(255,102,0,0.3);
+  border-bottom: 1px solid rgba(255,102,0,0.3);
+  color: var(--neon-orange);
+  font-family:'Orbitron',sans-serif;
+  font-size: 9px; letter-spacing: 3px;
+  padding: 6px 0; overflow: hidden;
+  white-space: nowrap;
+  animation: marquee 18s linear infinite;
+  margin-bottom: 14px;
+}
+@keyframes marquee {
+  0%   { text-indent: 100%; }
+  100% { text-indent: -200%; }
+}
+.gc {
+  position: relative;
+}
+.gc::after {
+  content: '';
+  position: absolute; inset: 0; border-radius: inherit;
+  background: repeating-linear-gradient(
+    0deg,
+    transparent, transparent 3px,
+    rgba(0,0,0,0.07) 3px, rgba(0,0,0,0.07) 4px
+  );
+  pointer-events: none;
+}
+/* Pixel corners on game cards */
+.gc.c-blue   { border-color: rgba(0,212,255,0.3); }
+.gc.c-green  { border-color: rgba(0,255,136,0.3); }
+.gc.c-purple { border-color: rgba(191,0,255,0.3); }
+.gc.c-pink   { border-color: rgba(255,0,110,0.3); }
+.gc.c-yellow { border-color: rgba(255,221,0,0.3); }
+.gc.c-orange { border-color: rgba(255,102,0,0.3); }
+
+/* Arcade game-over panel */
+.go-panel {
+  border: 2px solid var(--neon-orange);
+  box-shadow: 0 0 30px rgba(255,102,0,0.3), inset 0 0 20px rgba(255,102,0,0.05);
+}
+.go-title {
+  color: var(--neon-orange);
+  text-shadow: 0 0 20px rgba(255,102,0,0.7);
+  letter-spacing: 4px;
+}
+/* Diff tabs arcade style */
+.diff-tab.active-hard {
+  border-color: #ff6600;
+  background: rgba(255,102,0,0.15);
+  box-shadow: 0 0 14px rgba(255,102,0,0.35), inset 0 0 8px rgba(255,102,0,0.1);
+}
+.diff-tab.active-hard .dt-lbl { color: #ff6600; }
+
+/* Level badge improvements */
+.lvl-badge {
+  font-size: 10px; letter-spacing: 2px;
+  padding: 5px 14px; border-radius: 20px;
+  font-family:'Orbitron',sans-serif; font-weight:700;
+  display: inline-block; margin-bottom: 12px;
+  text-transform: uppercase;
+  animation: glowPulse 2s ease infinite;
+}
+.lvl-badge.hard    { background: rgba(255,102,0,.15); border:1px solid #ff6600; color:#ff6600; }
+.lvl-badge.extreme { background: rgba(255,0,110,.15); border:1px solid #ff006e; color:#ff006e; }
+
+/* Stroop combo glow */
+.hud-val.o { color: var(--neon-orange); }
 </style>
 </head>
 <body class="no-select">
@@ -856,28 +929,29 @@ body::before {
 <div id="screen-home" class="screen active">
 
   <div class="home-hero">
+    <div class="arcade-marquee">★ ARCADE BRAIN ★ ADULT EDITION ★ HIGH SCORE ★ INSERT COIN ★</div>
     <div class="brain-icon">
       <div class="brain-ring1"></div>
       <div class="brain-ring2"></div>
-      <div class="brain-core">🧠</div>
+      <div class="brain-core">👾</div>
     </div>
-    <h1 class="main-title">BRAIN<br>TRAINING</h1>
-    <p class="main-sub">Entrena tu mente</p>
+    <h1 class="main-title">ARCADE<br>BRAIN</h1>
+    <p class="main-sub">⚡ ADULT EDITION ⚡</p>
   </div>
 
   <div class="stats-row">
-    <div class="stat-pill"><span class="val" id="home-pts">0</span><div class="lbl">Puntos</div></div>
-    <div class="stat-pill"><span class="val" id="home-games">0</span><div class="lbl">Partidas</div></div>
-    <div class="stat-pill"><span class="val" id="home-streak">0</span><div class="lbl">Racha</div></div>
+    <div class="stat-pill"><span class="val" id="home-pts">0</span><div class="lbl">🏆 Score</div></div>
+    <div class="stat-pill"><span class="val" id="home-games">0</span><div class="lbl">🕹️ Partidas</div></div>
+    <div class="stat-pill"><span class="val" id="home-streak">0</span><div class="lbl">🔥 Racha</div></div>
   </div>
 
   <div class="diff-selector">
-    <div class="diff-selector-title">Dificultad global</div>
-    <div class="diff-tabs">
-      <div class="diff-tab active-easy" id="dtab-easy"    onclick="setDiff('easy')">    <span class="dt-icon">🟢</span><div class="dt-lbl">FÁCIL</div></div>
-      <div class="diff-tab" id="dtab-medium" onclick="setDiff('medium')"><span class="dt-icon">🟡</span><div class="dt-lbl">MEDIO</div></div>
-      <div class="diff-tab" id="dtab-hard"   onclick="setDiff('hard')">  <span class="dt-icon">🟠</span><div class="dt-lbl">DIFÍCIL</div></div>
-      <div class="diff-tab" id="dtab-extreme"onclick="setDiff('extreme')"><span class="dt-icon">🔴</span><div class="dt-lbl">EXTREMO</div></div>
+    <div class="diff-selector-title">⚡ Modo de juego — Solo para adultos</div>
+    <div class="diff-tabs" style="grid-template-columns:1fr 1fr;">
+      <div class="diff-tab" id="dtab-easy"    style="display:none"></div>
+      <div class="diff-tab" id="dtab-medium"  style="display:none"></div>
+      <div class="diff-tab active-hard" id="dtab-hard"   onclick="setDiff('hard')">  <span class="dt-icon">🟠</span><div class="dt-lbl">DIFÍCIL</div></div>
+      <div class="diff-tab" id="dtab-extreme" onclick="setDiff('extreme')"><span class="dt-icon">🔴</span><div class="dt-lbl">EXTREMO</div></div>
     </div>
   </div>
 
@@ -905,7 +979,7 @@ body::before {
   <div class="hbar">
     <button class="hbar-back" onclick="goHome()">← MENÚ</button>
     <div class="hbar-title" id="cur-title">JUEGO</div>
-    <div class="hbar-score">⭐<span id="cur-score">0</span></div>
+    <div class="hbar-score">🔥<span id="cur-score">0</span></div>
   </div>
   <div id="game-area"></div>
 </div>
@@ -936,8 +1010,8 @@ body::before {
 const DIFF_CONFIG = {
   easy:    { label:'FÁCIL',   icon:'🟢', color:'#00ff88', lvlStart:1,  lvlMax:3,  timeMulti:1.5,  scoreMulti:1   },
   medium:  { label:'MEDIO',   icon:'🟡', color:'#ffdd00', lvlStart:3,  lvlMax:6,  timeMulti:1.0,  scoreMulti:1.5 },
-  hard:    { label:'DIFÍCIL', icon:'🟠', color:'#ff6600', lvlStart:6,  lvlMax:9,  timeMulti:0.7,  scoreMulti:2   },
-  extreme: { label:'EXTREMO', icon:'🔴', color:'#ff006e', lvlStart:9,  lvlMax:10, timeMulti:0.45, scoreMulti:3   }
+  hard:    { label:'DIFÍCIL', icon:'🟠', color:'#ff6600', lvlStart:5,  lvlMax:9,  timeMulti:0.65, scoreMulti:2.5 },
+  extreme: { label:'EXTREMO', icon:'🔴', color:'#ff006e', lvlStart:8,  lvlMax:10, timeMulti:0.40, scoreMulti:4   }
 };
 
 const GAME_INFO = {
@@ -957,7 +1031,7 @@ const GAME_INFO = {
    STATE
 ============================================================ */
 const S = {
-  diff:         'easy',
+  diff:         'hard',
   currentGame:  null,
   score:        0,
   level:        1,
@@ -1016,7 +1090,7 @@ function loadData() {
     S.totalGames  = d.totalGames  || 0;
     S.streak      = d.streak      || 0;
     S.lastDate    = d.lastDate    || null;
-    S.diff        = d.diff        || 'easy';
+    S.diff        = (d.diff==='easy'||d.diff==='medium') ? 'hard' : (d.diff || 'hard');
   } catch(e){}
   checkStreak();
   refreshHome();
@@ -1063,6 +1137,7 @@ function recordScore(game, score, level) {
    DIFFICULTY
 ============================================================ */
 function setDiff(d) {
+  if(d==='easy'||d==='medium') d='hard'; // arcade edition: min difficulty is hard
   S.diff = d;
   const tabs = ['easy','medium','hard','extreme'];
   tabs.forEach(t=>{
@@ -1970,18 +2045,22 @@ GAMES.numbers = function() {
 };
 
 /* ═══════════════════════════════════════════════════
-   8. STROOP EFFECT — 10 levels
-   Lvl1-2: word=ink (easy). Lvl3-4: word≠ink, 4 colors.
-   Lvl5-6: 5 colors. Lvl7-8: distractors (right answer position changes).
-   Lvl9-10: fast timer, 6 colors + rotated text
+   8. STROOP EFFECT — ARCADE ENHANCED
+   Lvl5-7: colorConflict, 5 colors, timer 3s, combos, -pts penalty
+   Lvl8-9: 6 colors, timer 2s, moving buttons, double distractors
+   Lvl10:  max speed 1.5s, buttons swap positions, semantic words
 ═══════════════════════════════════════════════════ */
 GAMES.stroop = function() {
   const area=$('game-area');
   const lvl=S.level;
-  const total=lvl<=2?10:lvl<=5?12:lvl<=8?15:18;
-  const timeLimit=Math.max(1.8,(5.5-lvl*.35)*getDiffCfg().timeMulti);
-  const colorConflict=lvl>=3;
-  const numColors=lvl<=4?4:lvl<=8?5:6;
+  // Arcade Stroop: always hard, real progression
+  const total = lvl<=6?12 : lvl<=8?16 : 20;
+  const timeLimit = Math.max(1.5,(4.5-lvl*0.28)*getDiffCfg().timeMulti);
+  const numColors  = lvl<=6?5:6;
+  const penaltyPts = lvl<=7?10:20;
+  const swapBtns   = lvl>=8;   // buttons randomly reorder each round
+  const semanticMix= lvl>=9;   // some words are not color names
+  const rotWords   = lvl>=8;
 
   const COLS=[
     {n:'ROJO',   h:'#ff4466',id:'r'},
@@ -1992,32 +2071,41 @@ GAMES.stroop = function() {
     {n:'NARANJA',h:'#ff8833',id:'o'},
   ].slice(0,numColors);
 
-  let round=0,timerI=null;
+  // Semantic distractors (interfering words, not color names)
+  const SEMANTIC=['FUEGO','CIELO','MAR','SOL','NOCHE','SANGRE','HOJA','ROSA'];
+
+  let round=0, combo=0, timerI=null;
 
   function nextRound(){
-    if(round>=total){ setTimeout(()=>showGameOver(`${round} rondas`),400); return; }
+    if(round>=total){ setTimeout(()=>showGameOver(`${round} rondas · Combo máx guardado`),400); return; }
     round++;
     const ink=pick(COLS);
-    const word=colorConflict ? pick(COLS.filter(c=>c.id!==ink.id)) : ink;
-    const opts=shuffle(COLS);
-    const rotDeg=lvl>=9?rand(-15,15):0;
-
+    // Word is always different from ink color (full conflict)
+    let wordText;
+    if(semanticMix && rand(1,4)===1){
+      wordText = pick(SEMANTIC); // semantic interference
+    } else {
+      wordText = pick(COLS.filter(c=>c.id!==ink.id)).n;
+    }
+    const opts = swapBtns ? shuffle([...COLS]) : [...COLS];
+    const rotDeg = rotWords ? rand(-18,18) : 0;
     const timeLeft_ref={v:timeLimit};
     const circum=2*Math.PI*20;
 
     area.innerHTML=`
-      ${makeHUD([`<div class="hud-item"><div class="hud-lbl">RONDA</div><div class="hud-val y">${round}/${total}</div></div>`])}
+      ${makeHUD([`<div class="hud-item"><div class="hud-lbl">RONDA</div><div class="hud-val y">${round}/${total}</div></div>`,
+                 `<div class="hud-sep"></div><div class="hud-item"><div class="hud-lbl">COMBO</div><div class="hud-val o" id="strp-combo">${combo}x</div></div>`])}
       ${levelLabel(lvl)}
-      <div class="stroop-inst">Selecciona el COLOR DE TINTA</div>
-      <div class="stroop-word" style="color:${ink.h};transform:rotate(${rotDeg}deg)">${word.n}</div>
-      <div style="display:flex;justify-content:center;align-items:center;gap:8px;margin-bottom:8px;">
-        <svg width="44" height="44" viewBox="0 0 44 44" style="transform:rotate(-90deg)">
+      <div style="display:flex;align-items:center;justify-content:center;gap:6px;margin-bottom:6px;">
+        <svg width="44" height="44" viewBox="0 0 44 44" style="transform:rotate(-90deg);flex-shrink:0">
           <circle fill="none" stroke="rgba(255,255,255,.07)" cx="22" cy="22" r="18" stroke-width="4"/>
           <circle fill="none" stroke="${ink.h}" cx="22" cy="22" r="18" stroke-width="4"
             id="strc" stroke-dasharray="${circum}" stroke-dashoffset="0" stroke-linecap="round"/>
         </svg>
-        <div class="msg inf" id="strop-msg" style="flex:1;margin-bottom:0;">¿De qué color está escrito?</div>
+        <div class="stroop-inst" style="margin-bottom:0;">Toca el COLOR DE LA TINTA${penaltyPts>0?` · ✗ -${penaltyPts}pts`:''}</div>
       </div>
+      <div class="stroop-word" style="color:${ink.h};transform:rotate(${rotDeg}deg)">${wordText}</div>
+      <div class="msg inf" id="strop-msg">¿De qué color está escrita?</div>
       <div class="stroop-opts" id="strop-opts"></div>`;
 
     const optsEl=$('strop-opts');
@@ -2039,7 +2127,8 @@ GAMES.stroop = function() {
       if(timeLeft_ref.v<=0){
         clearInterval(timerI);
         $$('#strop-opts button').forEach(b=>b.onclick=b.ontouchend=null);
-        setMsg('strop-msg','bad',`⏰ Era ${ink.n}`);
+        combo=0;
+        setMsg('strop-msg','bad',`⏰ Era ${ink.n} · COMBO ROTO`);
         vibrate([80,40,80]);
         addT(setTimeout(nextRound,800));
       }
@@ -2050,22 +2139,31 @@ GAMES.stroop = function() {
     clearInterval(timerI);
     $$('#strop-opts button').forEach(b=>b.onclick=b.ontouchend=null);
     if(isOk){
-      btn.style.background='rgba(0,255,136,.18)';
-      const pts=addScore(Math.floor(15*lvl)+10); updateHUDScore();
-      setMsg('strop-msg','ok',`✓ ¡${ink.n}! +${pts}`);
-      vibrate([20,10,40]);
+      combo++;
+      const comboBonus = combo>=3 ? Math.floor(combo*0.5) : 0;
+      btn.style.background='rgba(0,255,136,.22)';
+      const base=Math.floor(18*lvl)+12;
+      const pts=addScore(base+comboBonus); updateHUDScore();
+      const msg=combo>=5?`🔥 COMBO ×${combo}! +${pts}`:combo>=3?`⚡ ×${combo} +${pts}`:`✓ ${ink.n} +${pts}`;
+      setMsg('strop-msg','ok',msg);
+      if($('strp-combo')) $('strp-combo').textContent=combo+'x';
+      vibrate(combo>=5?[20,10,20,10,40]:[20,10,40]);
     } else {
-      btn.style.background='rgba(255,0,110,.15)';
-      $$('#strop-opts button').forEach(b=>{ if(b.textContent===ink.n) b.style.background='rgba(0,255,136,.12)'; });
-      setMsg('strop-msg','bad',`✗ Era ${ink.n}`);
+      combo=0;
+      btn.style.background='rgba(255,0,110,.18)';
+      $$('#strop-opts button').forEach(b=>{ if(b.textContent===ink.n) b.style.background='rgba(0,255,136,.14)'; });
+      S.score=Math.max(0,S.score-penaltyPts);
+      $('cur-score').textContent=S.score;
+      setMsg('strop-msg','bad',`✗ Era ${ink.n} · -${penaltyPts}pts · COMBO ROTO`);
       vibrate([80,40,80]);
     }
-    addT(setTimeout(nextRound,850));
+    addT(setTimeout(nextRound,750));
   }
 
   function setMsg(id,type,txt){ const m=$(id);if(m){m.className=`msg ${type}`;m.textContent=txt;} }
   nextRound();
 };
+
 
 /* ═══════════════════════════════════════════════════
    9. SEQUENCE PATTERN — 10 levels
